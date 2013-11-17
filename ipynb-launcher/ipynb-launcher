@@ -1,0 +1,103 @@
+#!/usr/bin/python
+"""
+Launch a bunch of ipython notebook servers.
+"""
+import os
+import sys
+from os.path import expanduser
+
+apphome = expanduser("~") + "/.config/ipynb-launcher/"
+
+if not os.path.exists(apphome):
+    os.makedirs(apphome)
+
+#
+# read ipython interpreter config
+#
+interpreters = []
+try:
+    with open(apphome + 'interpreters', 'r') as f:
+        for line in f:
+            interpreters.append(line.rstrip().split(':'))
+except:
+    interpreters = [['ipython2', '/usr/bin/ipython', 20000]]
+    with open(apphome + 'interpreters', 'w') as f:
+        f.write(":".join(str(s) for s in interpreters[0]))
+
+#
+# read ipython notebook dirs
+#
+ipynb_dirs = []
+try:
+    with open(apphome + 'dirs', 'r') as f:
+        for line in f:
+            ipynb_dirs.append(line.rstrip())
+except:
+    with open(apphome + 'dirs', 'w') as f:
+        f.write(expanduser("~") + "/Desktop/notebooks")
+    print("Edit the file %s and try again." % (apphome + 'dirs'))
+    sys.exit(1)
+
+#
+# attempt to redirect logs
+#
+sys.stderr = sys.stdout = open(apphome + '/ipynb-launcher.log', 'w')
+
+#
+# launch ipython notebooks
+#
+for idx, interpreter in enumerate(interpreters):
+    pids = []
+    for idx, ipynb_dir in enumerate(ipynb_dirs):
+        if os.path.isdir(ipynb_dir):
+            os.chdir(ipynb_dir)
+            p = os.spawnl(os.P_NOWAIT, interpreter[1], 'ipython', 'notebook',
+                          '--script',
+                          '--logfile=%s/%s.log' % (apphome, interpreter[0]),
+                          '--no-browser',
+                          '--port=%d' % (int(interpreter[2]) + idx))
+            pids.append(p)
+        else:
+            print("Skipping nonexisting dir " + ipynb_dir)
+
+    with open(apphome + '/%s-pids.log' % interpreter[0], 'w') as f:
+        for p in pids:
+            f.write("%d " % p)
+
+
+#
+# Generate index page
+#
+header = """<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>IPython notebook server index</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="bootstrap/3.0.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+"""
+
+footer = """</div></body></html>"""
+
+with open(apphome + '/ipynb-index.html', 'w') as f:
+
+    f.write(header)
+    f.write("<div class='row'>")
+    spansize = 12 / len(interpreters)
+    for idx, interpreter in enumerate(interpreters):
+
+        f.write("<div class='col-md-%d'><h1>%s notebook server index</h1>" % (spansize, interpreter[0]))
+        f.write("<ul>")
+        for idx, ipynb_dir in enumerate(ipynb_dirs):
+            url_name = '/'.join(ipynb_dir.split('/')[4:])
+            f.write("<li><a href='http://127.0.0.1:%d/'>%s</a></li>" % (int(interpreter[2]) + idx, url_name))
+        f.write("</ul>")
+        f.write("</div>")
+
+    f.write("</div>")
+    f.write(footer)
+
+
