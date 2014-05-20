@@ -10,7 +10,8 @@ apphome = expanduser("~") + "/.config/ipynb-launcher/"
 if not os.path.exists(apphome):
     os.makedirs(apphome)
 
-out_fd = os.open(apphome + "ipynb.log", os.O_WRONLY | os.O_CREAT)
+# redirect notebook server output (stdin/stdout) to a log file
+out_fd = os.open(apphome + "/ipython-notebook.log", os.O_WRONLY | os.O_CREAT)
 os.dup2(out_fd, 1)  # stdout
 os.dup2(out_fd, 2)  # stderr
 
@@ -71,15 +72,12 @@ for idx, interpreter in enumerate(interpreters):
     pids = []
     for idx, ipynb_dir in enumerate(ipynb_dirs):
         if os.path.isdir(ipynb_dir):
-            #os.chdir(ipynb_dir)
             p = os.spawnl(os.P_NOWAIT, interpreter[1], 'ipython',
                           'notebook',
-                          '--logfile=%s/%s.log' % (apphome, interpreter[0]),
                           '--notebook-dir=%s' % ipynb_dir,
                           '--script',
                           '--no-browser',
                           '--port=%d' % (int(interpreter[2]) + idx)
-                          #' 2&>1 %s/%s.log' % (apphome, interpreter[0])
                           )
             pids.append(p)
         else:
@@ -88,7 +86,6 @@ for idx, interpreter in enumerate(interpreters):
     with open(apphome + '/%s-pids.log' % interpreter[0], 'w') as f:
         for p in pids:
             f.write("%d " % p)
-
 
 #
 # Generate index page
