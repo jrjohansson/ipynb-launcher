@@ -10,14 +10,11 @@ apphome = expanduser("~") + "/.config/ipynb-launcher/"
 if not os.path.exists(apphome):
     os.makedirs(apphome)
 
-# redirect notebook server output (stdin/stdout) to a log file
-out_fd = os.open(apphome + "/ipython-notebook.log", os.O_WRONLY | os.O_CREAT)
-os.dup2(out_fd, 1)  # stdout
-os.dup2(out_fd, 2)  # stderr
-
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--stop", help="stop all IPython notebooks",
+                    action='store_true')
+parser.add_argument("--start", help="start all IPython notebooks",
                     action='store_true')
 args = parser.parse_args()
 
@@ -32,7 +29,13 @@ if args.stop:
         os.system(cmd)
         sys.exit()
     except Exception as e:
-        sys.exit()
+        sys.exit(1)
+
+# redirect notebook server output (stdin/stdout) to a log file
+out_fd = os.open(apphome + "/ipython-notebook.log", os.O_WRONLY | os.O_CREAT)
+os.dup2(out_fd, 1)  # stdout
+os.dup2(out_fd, 2)  # stderr
+
 #
 # read ipython interpreter config
 #
@@ -122,4 +125,4 @@ with open(apphome + '/ipynb-index.html', 'w') as f:
     f.write("</div>")
     f.write(footer)
 
-
+sys.exit(0)
