@@ -111,10 +111,10 @@ with open(apphome + '/ipynb-index.html', 'w') as f:
 
     f.write(header)
     f.write("<div class='row'>")
-    spansize = 12 / len(interpreters)
+    #spansize = 12 / len(interpreters)
+    spansize = 4
     for idx, interpreter in enumerate(interpreters):
-
-        f.write("<div class='col-md-%d'><h1>%s notebook server index</h1>" % (spansize, interpreter[0]))
+        f.write("<div class='col-md-%d'><h1>%s</h1>" % (spansize, interpreter[0]))
         f.write("<ul>")
         for idx, ipynb_dir in enumerate(ipynb_dirs):
             url_name = '/'.join(ipynb_dir.split('/')[4:])
